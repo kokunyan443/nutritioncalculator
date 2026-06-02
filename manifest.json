@@ -1,15 +1,24 @@
 {
-  "name": "栄養計算機",
-  "short_name": "栄養計算機",
-  "start_url": "./index.html",
+  "name": "治療食栄養計算アプリ｜日本人の食事摂取基準2025",
+  "short_name": "栄養計算",
+  "description": "疾患別栄養管理支援システム｜日本人の食事摂取基準2025準拠",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#f0f4f8",
+  "theme_color": "#1a56a0",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://kokunyan443.github.io/栄養計算機/icon.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

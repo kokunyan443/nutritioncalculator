@@ -1,77 +1,245 @@
 <!DOCTYPE html>
 <html lang="ja">
+<head>
 <link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#1a56a0">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js');
   }
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>治療食栄養計算アプリ｜日本人の食事摂取基準2025</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans',Meiryo,sans-serif;background:#f0f4f8;color:#2d3748;min-height:100vh}
-header{background:linear-gradient(135deg,#1a56a0,#0d7377);color:#fff;padding:20px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.25)}
-header h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
-header p{font-size:.82rem;opacity:.9}
-.container{max-width:960px;margin:0 auto;padding:20px}
-.card{background:#fff;border-radius:12px;padding:22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid #1a56a0}
-.card h2{font-size:1rem;font-weight:700;color:#1a56a0;margin-bottom:14px;display:flex;align-items:center;gap:7px}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-.form-group{display:flex;flex-direction:column;gap:5px}
-.form-group label{font-size:.82rem;font-weight:600;color:#4a5568}
-.form-group input,.form-group select{padding:9px 11px;border:2px solid #e2e8f0;border-radius:7px;font-size:.92rem;transition:border-color .2s;background:#fff;font-family:inherit}
-.form-group input:focus,.form-group select:focus{outline:none;border-color:#1a56a0}
-.sub-unit{font-size:.77rem;color:#718096}
-.disease-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:9px}
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans',Meiryo,sans-serif;
+  background:#f0f4f8;color:#2d3748;min-height:100vh;
+  padding-bottom:calc(80px + env(safe-area-inset-bottom));
+}
+
+/* ===== HEADER ===== */
+header{
+  background:linear-gradient(135deg,#1a56a0,#0d7377);
+  color:#fff;padding:16px 20px 14px;
+  padding-top:calc(16px + env(safe-area-inset-top));
+  text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.25);
+  position:sticky;top:0;z-index:100;
+}
+header h1{font-size:1.1rem;font-weight:700;margin-bottom:2px;letter-spacing:.02em}
+header p{font-size:.72rem;opacity:.9}
+
+/* ===== CONTAINER ===== */
+.container{max-width:640px;margin:0 auto;padding:14px 14px 20px}
+
+/* ===== STEP CARDS (accordion) ===== */
+.step-card{
+  background:#fff;border-radius:14px;margin-bottom:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;
+}
+.step-header{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 18px;cursor:pointer;
+  border-left:4px solid #1a56a0;
+  user-select:none;
+  min-height:56px;
+}
+.step-header:active{background:#f7faff}
+.step-num{
+  width:28px;height:28px;min-width:28px;
+  background:#1a56a0;color:#fff;
+  border-radius:50%;font-size:.8rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.step-title{font-size:.95rem;font-weight:700;color:#1a56a0;flex:1}
+.step-icon{font-size:1rem}
+.step-chevron{
+  font-size:.75rem;color:#a0aec0;
+  transition:transform .25s;
+}
+.step-card.open .step-chevron{transform:rotate(180deg)}
+.step-body{
+  padding:0 18px;max-height:0;overflow:hidden;
+  transition:max-height .35s ease,padding .35s ease;
+}
+.step-card.open .step-body{max-height:9999px;padding:0 18px 18px}
+
+/* ===== FORM ELEMENTS ===== */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid.single{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:.78rem;font-weight:700;color:#4a5568}
+.form-group input,.form-group select{
+  padding:12px 13px;border:2px solid #e2e8f0;border-radius:10px;
+  font-size:16px;/* prevent iOS zoom */
+  line-height:1.4;
+  transition:border-color .2s;background:#fff;font-family:inherit;
+  -webkit-appearance:none;appearance:none;
+  min-height:48px;
+  color:#2d3748;
+}
+.form-group input:focus,.form-group select:focus{
+  outline:none;border-color:#1a56a0;
+  box-shadow:0 0 0 3px rgba(26,86,160,.12);
+}
+.sub-unit{font-size:.72rem;color:#718096;font-weight:400}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  padding-right:36px;
+}
+
+/* ===== DISEASE GRID ===== */
+.disease-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px}
 .dis-opt{position:relative}
 .dis-opt input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
-.dis-opt label{display:block;padding:9px 12px;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.87rem;transition:all .18s;text-align:center;font-weight:500;user-select:none}
-.dis-opt input:checked+label{border-color:#1a56a0;background:#ebf4ff;color:#1a56a0;font-weight:700}
-.dis-opt label:hover{border-color:#90cdf4;background:#f7faff}
-.extra-params{margin-top:14px;padding:14px;background:#f7fafc;border-radius:8px;border:1px solid #e2e8f0;display:none}
+.dis-opt label{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:12px 8px;min-height:52px;
+  border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;
+  font-size:.82rem;font-weight:600;
+  transition:all .18s;user-select:none;
+  line-height:1.3;
+}
+.dis-opt input:checked+label{
+  border-color:#1a56a0;background:#ebf4ff;color:#1a56a0;font-weight:700;
+}
+.dis-opt label:active{background:#f0f7ff}
+
+/* ===== EXTRA PARAMS ===== */
+.extra-params{
+  margin-top:10px;padding:14px;background:#f7fafc;
+  border-radius:10px;border:1px solid #e2e8f0;
+  display:none;
+}
 .extra-params.show{display:block}
-.extra-params strong{font-size:.88rem;color:#2d3748}
-.btn-calc{width:100%;padding:14px;background:linear-gradient(135deg,#1a56a0,#0d7377);color:#fff;border:none;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:transform .18s,box-shadow .18s;letter-spacing:.04em;font-family:inherit}
-.btn-calc:hover{transform:translateY(-2px);box-shadow:0 5px 16px rgba(26,86,160,.4)}
+.extra-params strong{font-size:.82rem;color:#2d3748;display:block;margin-bottom:10px}
+
+/* ===== STICKY CALC BUTTON ===== */
+.btn-calc-wrap{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:linear-gradient(transparent,rgba(240,244,248,.95) 30%);
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+}
+.btn-calc{
+  width:100%;max-width:640px;margin:0 auto;display:block;
+  padding:16px;background:linear-gradient(135deg,#1a56a0,#0d7377);
+  color:#fff;border:none;border-radius:14px;
+  font-size:1rem;font-weight:700;cursor:pointer;
+  transition:transform .18s,box-shadow .18s;
+  letter-spacing:.04em;font-family:inherit;
+  box-shadow:0 4px 16px rgba(26,86,160,.4);
+  min-height:54px;
+}
+.btn-calc:active{transform:scale(.98);box-shadow:0 2px 8px rgba(26,86,160,.3)}
+
+/* ===== RESULT SECTION ===== */
 .result-sec{display:none}
 .result-sec.show{display:block}
-.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:11px;margin-bottom:18px}
-.s-card{background:linear-gradient(135deg,#ebf8ff,#e6fffa);border:1px solid #bee3f8;border-radius:10px;padding:14px;text-align:center}
-.s-card .val{font-size:1.45rem;font-weight:700;color:#1a56a0;line-height:1.1}
-.s-card .lbl{font-size:.73rem;color:#4a5568;margin-top:3px;font-weight:600}
-.s-card .sub{font-size:.75rem;color:#718096;margin-top:1px}
+.result-card{
+  background:#fff;border-radius:14px;padding:18px;margin-bottom:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.result-card h2{font-size:.92rem;font-weight:700;color:#1a56a0;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+
+/* ===== SUMMARY CARDS ===== */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.s-card{
+  background:linear-gradient(135deg,#ebf8ff,#e6fffa);
+  border:1px solid #bee3f8;border-radius:12px;
+  padding:14px 12px;text-align:center;
+}
+.s-card .val{font-size:1.35rem;font-weight:700;color:#1a56a0;line-height:1.1}
+.s-card .lbl{font-size:.68rem;color:#4a5568;margin-top:4px;font-weight:700}
+.s-card .sub{font-size:.66rem;color:#718096;margin-top:2px;line-height:1.3}
 .s-card.warn{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fbd38d}
 .s-card.warn .val{color:#b45309}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.88rem}
-thead th{background:#1a56a0;color:#fff;padding:9px 12px;text-align:left;font-size:.82rem;font-weight:600}
-tbody td{padding:9px 12px;border-bottom:1px solid #e2e8f0}
-tbody tr:nth-child(even){background:#f7fafc}
-tbody tr:last-child td{border-bottom:none}
-tbody tr.hl td{background:#fff3cd!important}
-tbody tr.hl td:nth-child(2){color:#c53030;font-weight:700}
-.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.72rem;font-weight:600;margin-left:4px}
-.b-r{background:#fed7d7;color:#c53030}
-.b-i{background:#c6f6d5;color:#276749}
-.b-u{background:#bee3f8;color:#1a56a0}
-.note-cell{font-size:.77rem;color:#718096}
-.alert{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:.85rem;display:flex;gap:8px;align-items:flex-start}
+.energy-note{font-size:.72rem;color:#718096;margin-top:6px;line-height:1.6;background:#f7fafc;padding:10px;border-radius:8px}
+
+/* ===== ALERT BADGES ===== */
+.alert{
+  padding:12px 14px;border-radius:10px;margin-bottom:10px;
+  font-size:.82rem;display:flex;gap:8px;align-items:flex-start;line-height:1.5;
+}
 .alert-w{background:#fffbeb;border:1px solid #fbd38d;color:#744210}
 .alert-i{background:#ebf8ff;border:1px solid #90cdf4;color:#2a4365}
+
+/* ===== NUTRIENT TABLE (card-based on mobile) ===== */
+.nutrient-list{margin-top:6px}
+.nutrient-row{
+  display:flex;flex-direction:column;
+  padding:12px 0;border-bottom:1px solid #edf2f7;
+}
+.nutrient-row:last-child{border-bottom:none}
+.nutrient-row.hl{background:#fffbeb;border-radius:8px;padding:12px 10px;margin:0 -10px;border-bottom:none;margin-bottom:2px}
+.n-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.n-name{font-size:.88rem;font-weight:700;color:#2d3748}
+.n-val{font-size:1rem;font-weight:700;color:#1a56a0}
+.n-val.warn{color:#c53030}
+.n-unit{font-size:.72rem;color:#718096;margin-left:2px}
+.n-bottom{display:flex;justify-content:space-between;align-items:center}
+.n-pct{font-size:.72rem;color:#718096;background:#f7fafc;padding:2px 7px;border-radius:12px}
+.n-note{font-size:.72rem;color:#718096;text-align:right;max-width:55%}
+.n-note.warn-note{color:#b45309;font-weight:600}
+
+/* ===== DISEASE NOTES ===== */
 .disease-note{margin-bottom:14px}
-.disease-note h3{font-size:.9rem;font-weight:700;color:#553c9a;margin-bottom:6px}
-.disease-note ul{padding-left:18px}
-.disease-note li{font-size:.84rem;margin-bottom:3px;color:#4a5568;line-height:1.5}
-.ref-note{font-size:.76rem;color:#718096;text-align:center;margin-top:16px;padding:10px;border-top:1px solid #e2e8f0;line-height:1.7}
-.print-btn{display:inline-block;margin-top:10px;padding:8px 16px;background:#e2e8f0;border:none;border-radius:7px;cursor:pointer;font-size:.83rem;font-weight:600;color:#4a5568;font-family:inherit}
-.print-btn:hover{background:#cbd5e0}
-@media(max-width:600px){.form-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:repeat(2,1fr)}}
-@media print{header{background:#1a56a0!important;-webkit-print-color-adjust:exact}.btn-calc,.print-btn{display:none}}
+.disease-note:last-child{margin-bottom:0}
+.disease-note h3{
+  font-size:.85rem;font-weight:700;color:#553c9a;
+  margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e9d8fd;
+}
+.disease-note ul{padding-left:16px}
+.disease-note li{font-size:.8rem;margin-bottom:5px;color:#4a5568;line-height:1.55}
+
+/* ===== MACRO ESTIMATE ===== */
+.macro-est{font-size:.72rem;color:#718096;margin-top:10px;padding:10px;background:#f7fafc;border-radius:8px;line-height:1.6}
+
+/* ===== PRINT BUTTON ===== */
+.print-btn{
+  display:block;width:100%;padding:14px;
+  background:#edf2f7;border:none;border-radius:10px;
+  cursor:pointer;font-size:.88rem;font-weight:600;color:#4a5568;
+  font-family:inherit;margin-top:4px;min-height:48px;
+}
+.print-btn:active{background:#e2e8f0}
+
+/* ===== REF NOTE ===== */
+.ref-note{
+  font-size:.72rem;color:#718096;text-align:center;
+  margin-top:16px;padding:12px;
+  border-top:1px solid #e2e8f0;line-height:1.8;
+}
+
+/* ===== DIVIDER ===== */
+.divider{height:1px;background:#e2e8f0;margin:12px 0}
+
+/* ===== PRINT ===== */
+@media print{
+  header{background:#1a56a0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .btn-calc-wrap,.print-btn{display:none}
+  .step-body{max-height:none!important;padding:0 18px 18px!important}
+}
+
+/* ===== DESKTOP POLISH ===== */
+@media(min-width:480px){
+  .container{padding:20px 20px 24px}
+  .disease-grid{grid-template-columns:repeat(3,1fr)}
+  .summary-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:640px){
+  .disease-grid{grid-template-columns:repeat(5,1fr)}
+}
 </style>
 </head>
 <body>
+
 <header>
   <h1>🏥 治療食栄養計算アプリ</h1>
   <p>日本人の食事摂取基準2025準拠｜疾患別栄養管理支援システム</p>
@@ -79,192 +247,216 @@ tbody tr.hl td:nth-child(2){color:#c53030;font-weight:700}
 
 <div class="container">
 
-<!-- ① 患者情報 -->
-<div class="card">
-  <h2>👤 患者基本情報</h2>
-  <div class="form-grid">
-    <div class="form-group">
-      <label>性別</label>
-      <select id="gender"><option value="male">男性</option><option value="female">女性</option></select>
+  <!-- ① 患者情報 -->
+  <div class="step-card open" id="card1">
+    <div class="step-header" onclick="toggleCard('card1')">
+      <div class="step-num">1</div>
+      <div class="step-title">👤 患者基本情報</div>
+      <div class="step-chevron">▼</div>
     </div>
-    <div class="form-group">
-      <label>年齢 <span class="sub-unit">（歳）</span></label>
-      <input type="number" id="age" min="1" max="120" placeholder="例：65">
-    </div>
-    <div class="form-group">
-      <label>身長 <span class="sub-unit">（cm）</span></label>
-      <input type="number" id="height" min="50" max="250" placeholder="例：165" step="0.1">
-    </div>
-    <div class="form-group">
-      <label>体重 <span class="sub-unit">（kg）</span></label>
-      <input type="number" id="weight" min="1" max="300" placeholder="例：60" step="0.1">
-    </div>
-    <div class="form-group">
-      <label>身体活動レベル (PAL)</label>
-      <select id="pal">
-        <option value="1.20">臥床・寝たきり (1.20)</option>
-        <option value="1.50" selected>低い：座位中心 (1.50)</option>
-        <option value="1.75">ふつう：通常生活 (1.75)</option>
-        <option value="2.00">高い：活発な活動 (2.00)</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>ストレス係数</label>
-      <select id="stress">
-        <option value="1.0">1.0 通常・外来</option>
-        <option value="1.1">1.1 軽症・術後</option>
-        <option value="1.2">1.2 中等症・感染症</option>
-        <option value="1.3">1.3 重症・多発外傷</option>
-        <option value="1.5">1.5 重症感染症</option>
-        <option value="1.7">1.7 熱傷・超重症</option>
-      </select>
-    </div>
-  </div>
-</div>
-
-<!-- ② 疾患選択 -->
-<div class="card">
-  <h2>🏥 疾患選択 <span style="font-size:.8rem;font-weight:400;color:#718096">（複数選択可）</span></h2>
-  <div class="disease-grid">
-    <div class="dis-opt"><input type="checkbox" id="d_dm" value="dm"><label for="d_dm">糖尿病</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_ht" value="ht"><label for="d_ht">高血圧症</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_ckd" value="ckd"><label for="d_ckd">慢性腎臓病（CKD）</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_liver" value="liver"><label for="d_liver">肝臓疾患</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_hf" value="hf"><label for="d_hf">心不全</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_dyslip" value="dyslip"><label for="d_dyslip">脂質異常症</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_gout" value="gout"><label for="d_gout">痛風・高尿酸血症</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_osteo" value="osteo"><label for="d_osteo">骨粗鬆症</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_anemia" value="anemia"><label for="d_anemia">鉄欠乏性貧血</label></div>
-    <div class="dis-opt"><input type="checkbox" id="d_obesity" value="obesity"><label for="d_obesity">肥満症</label></div>
-  </div>
-
-  <!-- CKD params -->
-  <div id="ep_ckd" class="extra-params">
-    <strong>▶ 慢性腎臓病 詳細設定</strong>
-    <div class="form-grid" style="margin-top:10px">
-      <div class="form-group">
-        <label>CKDステージ（G分類）</label>
-        <select id="ckd_stage">
-          <option value="G1">G1（eGFR ≥90）</option>
-          <option value="G2">G2（eGFR 60-89）</option>
-          <option value="G3a">G3a（eGFR 45-59）</option>
-          <option value="G3b">G3b（eGFR 30-44）</option>
-          <option value="G4">G4（eGFR 15-29）</option>
-          <option value="G5">G5（eGFR &lt;15）</option>
-          <option value="HD">血液透析（HD）</option>
-          <option value="PD">腹膜透析（PD）</option>
-        </select>
+    <div class="step-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>性別</label>
+          <select id="gender">
+            <option value="male">男性</option>
+            <option value="female">女性</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>年齢 <span class="sub-unit">（歳）</span></label>
+          <input type="number" id="age" min="1" max="120" placeholder="例：65" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label>身長 <span class="sub-unit">（cm）</span></label>
+          <input type="number" id="height" min="50" max="250" placeholder="165" step="0.1" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label>体重 <span class="sub-unit">（kg）</span></label>
+          <input type="number" id="weight" min="1" max="300" placeholder="60" step="0.1" inputmode="decimal">
+        </div>
       </div>
-      <div class="form-group">
-        <label>尿タンパク分類</label>
-        <select id="ckd_upro">
-          <option value="A1">A1（正常〜微量）</option>
-          <option value="A2">A2（軽度）</option>
-          <option value="A3">A3（高度）</option>
-        </select>
+      <div class="divider"></div>
+      <div class="form-grid single">
+        <div class="form-group">
+          <label>身体活動レベル（PAL）</label>
+          <select id="pal">
+            <option value="1.20">臥床・寝たきり（1.20）</option>
+            <option value="1.50" selected>低い：座位中心（1.50）</option>
+            <option value="1.75">ふつう：通常生活（1.75）</option>
+            <option value="2.00">高い：活発な活動（2.00）</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ストレス係数</label>
+          <select id="stress">
+            <option value="1.0">1.0 — 通常・外来</option>
+            <option value="1.1">1.1 — 軽症・術後</option>
+            <option value="1.2">1.2 — 中等症・感染症</option>
+            <option value="1.3">1.3 — 重症・多発外傷</option>
+            <option value="1.5">1.5 — 重症感染症</option>
+            <option value="1.7">1.7 — 熱傷・超重症</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Liver params -->
-  <div id="ep_liver" class="extra-params">
-    <strong>▶ 肝臓疾患 詳細設定</strong>
-    <div class="form-grid" style="margin-top:10px">
-      <div class="form-group">
-        <label>病態タイプ</label>
-        <select id="liver_type">
-          <option value="hepatitis">急性肝炎・慢性肝炎</option>
-          <option value="cirr_comp">肝硬変（代償期）</option>
-          <option value="cirr_decomp">肝硬変（非代償期）</option>
-          <option value="enceph">肝性脳症</option>
-        </select>
+  <!-- ② 疾患選択 -->
+  <div class="step-card open" id="card2">
+    <div class="step-header" onclick="toggleCard('card2')">
+      <div class="step-num">2</div>
+      <div class="step-title">🏥 疾患選択 <span style="font-size:.75rem;font-weight:400;color:#718096">（複数可）</span></div>
+      <div class="step-chevron">▼</div>
+    </div>
+    <div class="step-body">
+      <div class="disease-grid">
+        <div class="dis-opt"><input type="checkbox" id="d_dm"      value="dm"     ><label for="d_dm"     >糖尿病</label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_ht"      value="ht"     ><label for="d_ht"     >高血圧症</label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_ckd"     value="ckd"    ><label for="d_ckd"    >CKD<br><span style="font-size:.72rem;font-weight:400">慢性腎臓病</span></label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_liver"   value="liver"  ><label for="d_liver"  >肝臓疾患</label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_hf"      value="hf"     ><label for="d_hf"     >心不全</label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_dyslip"  value="dyslip" ><label for="d_dyslip" >脂質異常症</label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_gout"    value="gout"   ><label for="d_gout"   >痛風・<br><span style="font-size:.72rem;font-weight:400">高尿酸血症</span></label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_osteo"   value="osteo"  ><label for="d_osteo"  >骨粗鬆症</label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_anemia"  value="anemia" ><label for="d_anemia" >鉄欠乏性<br><span style="font-size:.72rem;font-weight:400">貧血</span></label></div>
+        <div class="dis-opt"><input type="checkbox" id="d_obesity" value="obesity"><label for="d_obesity">肥満症</label></div>
+      </div>
+
+      <!-- CKD params -->
+      <div id="ep_ckd" class="extra-params">
+        <strong>▶ 慢性腎臓病（CKD）詳細設定</strong>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>CKDステージ（G分類）</label>
+            <select id="ckd_stage">
+              <option value="G1">G1（eGFR ≥90）</option>
+              <option value="G2">G2（eGFR 60-89）</option>
+              <option value="G3a">G3a（eGFR 45-59）</option>
+              <option value="G3b">G3b（eGFR 30-44）</option>
+              <option value="G4">G4（eGFR 15-29）</option>
+              <option value="G5">G5（eGFR &lt;15）</option>
+              <option value="HD">血液透析（HD）</option>
+              <option value="PD">腹膜透析（PD）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>尿タンパク分類</label>
+            <select id="ckd_upro">
+              <option value="A1">A1（正常〜微量）</option>
+              <option value="A2">A2（軽度）</option>
+              <option value="A3">A3（高度）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Liver params -->
+      <div id="ep_liver" class="extra-params">
+        <strong>▶ 肝臓疾患 詳細設定</strong>
+        <div class="form-grid single">
+          <div class="form-group">
+            <label>病態タイプ</label>
+            <select id="liver_type">
+              <option value="hepatitis">急性肝炎・慢性肝炎</option>
+              <option value="cirr_comp">肝硬変（代償期）</option>
+              <option value="cirr_decomp">肝硬変（非代償期）</option>
+              <option value="enceph">肝性脳症</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- DM params -->
+      <div id="ep_dm" class="extra-params">
+        <strong>▶ 糖尿病 詳細設定</strong>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>血糖コントロール</label>
+            <select id="dm_ctrl">
+              <option value="good">良好（HbA1c &lt;7%）</option>
+              <option value="mod">中等度（7〜8%）</option>
+              <option value="poor">不良（&gt;8%）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>腎症合併</label>
+            <select id="dm_neph">
+              <option value="none">なし</option>
+              <option value="yes">あり（糖尿病性腎症）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- HF params -->
+      <div id="ep_hf" class="extra-params">
+        <strong>▶ 心不全 詳細設定</strong>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>重症度（NYHA分類）</label>
+            <select id="hf_nyha">
+              <option value="1-2">I〜II度（軽〜中等症）</option>
+              <option value="3-4">III〜IV度（重症）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>水分制限</label>
+            <select id="hf_fluid">
+              <option value="none">制限なし</option>
+              <option value="1500">1500mL/日</option>
+              <option value="1000">1000mL/日</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- DM params -->
-  <div id="ep_dm" class="extra-params">
-    <strong>▶ 糖尿病 詳細設定</strong>
-    <div class="form-grid" style="margin-top:10px">
-      <div class="form-group">
-        <label>血糖コントロール</label>
-        <select id="dm_ctrl">
-          <option value="good">良好（HbA1c &lt;7%）</option>
-          <option value="mod">中等度（HbA1c 7〜8%）</option>
-          <option value="poor">不良（HbA1c &gt;8%）</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>腎症合併</label>
-        <select id="dm_neph">
-          <option value="none">なし</option>
-          <option value="yes">あり（糖尿病性腎症）</option>
-        </select>
-      </div>
+  <!-- RESULT SECTION -->
+  <div id="result_sec" class="result-sec">
+
+    <div class="result-card" style="border-top:4px solid #0d7377">
+      <h2>⚡ エネルギー計算結果</h2>
+      <div id="energy_cards" class="summary-grid"></div>
+      <div id="energy_note" class="energy-note"></div>
     </div>
-  </div>
 
-  <!-- HF params -->
-  <div id="ep_hf" class="extra-params">
-    <strong>▶ 心不全 詳細設定</strong>
-    <div class="form-grid" style="margin-top:10px">
-      <div class="form-group">
-        <label>重症度（NYHA分類）</label>
-        <select id="hf_nyha">
-          <option value="1-2">I〜II度（軽症〜中等症）</option>
-          <option value="3-4">III〜IV度（重症）</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>水分制限</label>
-        <select id="hf_fluid">
-          <option value="none">制限なし</option>
-          <option value="1500">1500mL/日</option>
-          <option value="1000">1000mL/日</option>
-        </select>
-      </div>
+    <div class="result-card" style="border-top:4px solid #553c9a">
+      <h2>🥗 栄養素目標量</h2>
+      <div id="alerts_area"></div>
+      <div id="nutrient_table" class="nutrient-list"></div>
+      <div id="macro_est" class="macro-est"></div>
     </div>
-  </div>
-</div>
 
-<!-- ③ 計算ボタン -->
-<button class="btn-calc" onclick="doCalc()">🔢 栄養量を計算する</button>
+    <div id="dnotes_card" class="result-card" style="border-top:4px solid #c05621;display:none">
+      <h2>📋 疾患別 栄養管理ポイント</h2>
+      <div id="dnotes_area"></div>
+    </div>
 
-<!-- ④ 結果表示 -->
-<div id="result_sec" class="result-sec">
-
-  <div class="card" style="margin-top:18px;border-left-color:#0d7377">
-    <h2>⚡ エネルギー計算結果</h2>
-    <div id="energy_cards" class="summary-grid"></div>
-    <div id="energy_note" style="font-size:.78rem;color:#718096;margin-top:6px"></div>
-  </div>
-
-  <div class="card" style="border-left-color:#553c9a">
-    <h2>🥗 栄養素目標量</h2>
-    <div id="alerts_area"></div>
-    <div id="nutrient_table"></div>
-  </div>
-
-  <div id="dnotes_card" class="card" style="border-left-color:#c05621;display:none">
-    <h2>📋 疾患別 栄養管理ポイント</h2>
-    <div id="dnotes_area"></div>
-  </div>
-
-  <div style="text-align:center">
     <button class="print-btn" onclick="window.print()">🖨 印刷する</button>
-  </div>
 
-  <p class="ref-note">
-    ※ 日本人の食事摂取基準2025・各疾患ガイドラインに基づき計算しています。<br>
-    ※ 実際の栄養管理は患者個々の状態を考慮し、医師・管理栄養士の指導のもと行ってください。<br>
-    ※ CKD栄養基準：日本腎臓学会「CKD診療ガイドライン2023」、肝疾患：日本消化器病学会ガイドラインを参考にしています。
-  </p>
-</div>
+    <p class="ref-note">
+      ※ 日本人の食事摂取基準2025・各疾患ガイドラインに基づき計算しています。<br>
+      ※ 実際の栄養管理は患者個々の状態を考慮し、医師・管理栄養士の指導のもと行ってください。<br>
+      ※ CKD栄養基準：日本腎臓学会「CKD診療ガイドライン2023」、肝疾患：日本消化器病学会ガイドライン参考。
+    </p>
+  </div>
 
 </div><!-- /container -->
 
+<!-- STICKY CALC BUTTON -->
+<div class="btn-calc-wrap">
+  <button class="btn-calc" onclick="doCalc()">🔢 栄養量を計算する</button>
+</div>
+
 <script>
-// ---- toggle disease extra params ----
+// ---- Accordion toggle ----
+function toggleCard(id){
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ---- Disease extra params toggle ----
 ['ckd','liver','dm','hf'].forEach(function(d){
   document.getElementById('d_'+d).addEventListener('change',function(){
     document.getElementById('ep_'+d).classList.toggle('show',this.checked);
@@ -273,43 +465,33 @@ tbody tr.hl td:nth-child(2){color:#c53030;font-weight:700}
 
 // ---- DRI 2025 reference values ----
 function getDRI(gender, age){
-  // Calcium RDA (mg/day)
   var ca;
   if(gender==='male'){
     if(age<30) ca=800; else if(age<75) ca=750; else ca=700;
   } else {
-    if(age<75) ca=650; else ca=650;
+    ca = age<75 ? 650 : 650;
   }
-  // Iron RDA (mg/day)
   var fe;
   if(gender==='male'){
     fe = age>=75 ? 7.0 : 7.5;
   } else {
     if(age>=75) fe=6.0;
     else if(age>=50) fe=6.5;
-    else fe=10.5; // menstruation
+    else fe=10.5;
   }
-  // Vitamin D (adequate intake μg/day)
-  var vitD = age>=75 ? 20 : 15; // DRI2025: 15μg/day (18-74y), 20μg/day (75+y) — increased from 2020
-  // Vitamin K (adequate intake μg/day)
+  var vitD = age>=75 ? 20 : 15;
   var vitK = 150;
-  // Potassium adequate intake (mg/day)
   var k = gender==='male' ? 2500 : 2000;
-  // Fiber target (g/day)
   var fiber;
   if(gender==='male'){
-    fiber = age>=75 ? 20 : age>=65 ? 20 : 21;
+    fiber = age>=65 ? 20 : 21;
   } else {
-    fiber = age>=75 ? 17 : age>=65 ? 17 : 18;
+    fiber = age>=65 ? 17 : 18;
   }
-  // Salt target (g/day)
   var salt = gender==='male' ? 7.5 : 6.5;
-  // Protein %E target
   var protMinPct = age>=65 ? 0.15 : 0.13;
   var protMaxPct = 0.20;
-  // Fat %E target
   var fatMinPct = 0.20; var fatMaxPct = 0.30;
-  // Carb %E target
   var carbMinPct = 0.50; var carbMaxPct = 0.65;
   return {ca,fe,vitD,vitK,k,fiber,salt,protMinPct,protMaxPct,fatMinPct,fatMaxPct,carbMinPct,carbMaxPct};
 }
@@ -323,39 +505,41 @@ function doCalc(){
   var pal    = parseFloat(document.getElementById('pal').value);
   var sf     = parseFloat(document.getElementById('stress').value);
 
-  if(!age||!ht||!wt){alert('年齢・身長・体重を入力してください。');return;}
+  if(!age||!ht||!wt){
+    alert('年齢・身長・体重を入力してください。');
+    // open step 1 if closed
+    document.getElementById('card1').classList.add('open');
+    return;
+  }
 
   var htM  = ht/100;
-  var ibw  = htM*htM*22; // standard body weight (BMI22)
+  var ibw  = htM*htM*22;
   var bmi  = wt/(htM*htM);
 
-  // Harris-Benedict BEE
   var bee;
   if(gender==='male') bee = 66.47 + 13.75*wt + 5.003*ht - 6.755*age;
   else                bee = 655.1  + 9.563*wt + 1.850*ht - 4.676*age;
   var eer = bee*pal*sf;
 
-  // selected diseases
   var dis = [];
   document.querySelectorAll('.dis-opt input:checked').forEach(function(c){dis.push(c.value);});
 
   var dri = getDRI(gender,age);
 
-  // ---- base nutrient targets ----
   var energy   = Math.round(eer);
   var salt     = dri.salt;
   var fiber    = dri.fiber;
   var potK     = dri.k;
   var calcium  = dri.ca;
   var iron     = dri.fe;
-  var phos     = null; // restrict only when CKD
-  var purine   = null; // restrict only when gout
+  var phos     = null;
+  var purine   = null;
   var fluid    = null;
   var vitD     = dri.vitD;
-  var vitK     = dri.vitK;
+  var vitK_val = dri.vitK;
   var chol     = null;
 
-  var protPerKg= null; // g/kg IBW — set by disease
+  var protPerKg= null;
   var protMin  = Math.round(energy*dri.protMinPct/4);
   var protMax  = Math.round(energy*dri.protMaxPct/4);
   var fatMin   = Math.round(energy*dri.fatMinPct/9);
@@ -363,12 +547,11 @@ function doCalc(){
   var carbMin  = Math.round(energy*dri.carbMinPct/4);
   var carbMax  = Math.round(energy*dri.carbMaxPct/4);
 
-  var alerts   = []; // {type:'w'|'i', text}
-  var dnotes   = {}; // disease => [note strings]
+  var alerts   = [];
+  var dnotes   = {};
   var protNote = '';
   var kRestrict= false;
 
-  // ---- OBESITY ----
   if(dis.includes('obesity')){
     energy = Math.round(ibw*25);
     alerts.push({t:'w',msg:'肥満症：目標エネルギーを標準体重×25kcal/kgに設定しました。'});
@@ -381,7 +564,6 @@ function doCalc(){
     ];
   }
 
-  // ---- DIABETES ----
   if(dis.includes('dm')){
     var dneph = document.getElementById('dm_neph').value;
     if(!dis.includes('obesity')) energy = Math.round(ibw*27.5);
@@ -397,7 +579,7 @@ function doCalc(){
     fiber   = Math.max(fiber,20);
     dnotes['dm']=[
       '目標エネルギー：標準体重×25〜30kcal/kg（活動量・肥満に応じて設定）',
-      '炭水化物：総エネルギー50〜60%、GI値の低い食品（全粒穀物・野菜・豆類）を選択',
+      '炭水化物：総エネルギー50〜60%、GI値の低い食品を選択',
       '食物繊維：20g/日以上（食後血糖上昇を緩やかにする）',
       '脂質：飽和脂肪酸を控え不飽和脂肪酸を優先（魚・オリーブ油）',
       '食塩：6g/日未満（心血管・腎臓合併症の予防）',
@@ -407,7 +589,6 @@ function doCalc(){
     if(dneph==='yes') alerts.push({t:'w',msg:'糖尿病性腎症合併：CKDの栄養基準も参照し、タンパク質制限を優先してください。'});
   }
 
-  // ---- HYPERTENSION ----
   if(dis.includes('ht')){
     salt  = Math.min(salt,6.0);
     potK  = Math.max(potK,3000);
@@ -415,16 +596,15 @@ function doCalc(){
       '食塩：6g/日未満（重症は3〜5g/日；日本高血圧学会ガイドライン）',
       'カリウム：3000mg/日以上（野菜・果物・いも類の積極摂取）',
       '飽和脂肪酸を控え、n-3系脂肪酸（青魚）を増やす',
-      'DASH食パターン参考（野菜・果物・低脂肪乳製品・全粒穀物・ナッツ）',
+      'DASH食パターン参考（野菜・果物・低脂肪乳製品・全粒穀物）',
       'アルコール：男性20g/日以下、女性10g/日以下のエタノール',
       '適正体重の維持（BMI 25未満）'
     ];
   }
 
-  // ---- CKD ----
   if(dis.includes('ckd')){
     var stage = document.getElementById('ckd_stage').value;
-    energy = Math.round(ibw*30); // 25-35, use 30 as default
+    energy = Math.round(ibw*30);
     var pPerKg, saltCKD, kLimit=null, phosLimit=null;
     switch(stage){
       case 'G1':  pPerKg=1.0; saltCKD=6.0; break;
@@ -444,38 +624,40 @@ function doCalc(){
     if(kLimit){ potK=kLimit; kRestrict=true; }
     if(phosLimit) phos=phosLimit;
     alerts.push({t:'i',msg:'CKD '+stage+'：たんぱく質 '+ibw.toFixed(1)+'kg×'+pPerKg+'g/kg＝'+ckdProt+'g/日'});
-    var dn=['エネルギー：標準体重×25〜35kcal/kg（低栄養に注意）→本計算：'+Math.round(ibw*30)+'kcal/日'];
+    var dn=['エネルギー：標準体重×25〜35kcal/kg → '+Math.round(ibw*30)+'kcal/日'];
     dn.push('たんぱく質：'+ibw.toFixed(1)+'kg×'+pPerKg+'g/kg＝'+ckdProt+'g/日（'+stage+'基準）');
     dn.push('食塩：'+saltCKD+'g/日未満');
     if(kLimit) dn.push('カリウム：'+kLimit+'mg/日未満（ゆでこぼし・水さらしで低減）');
     if(phosLimit) dn.push('リン：'+phosLimit+'mg/日未満（食品添加物・加工食品を避ける）');
     if(stage==='HD'){
       dn.push('水分：透析間体重増加を透析体重の5%未満に（約1000mL/日以下を目安）');
-      dn.push('透析HD患者のリン制限はたんぱく質摂取量と関連→リン/たんぱく比を考慮');
+      dn.push('HD患者のリン制限はたんぱく質摂取量と関連→リン/たんぱく比を考慮');
     }
     if(stage==='PD') dn.push('腹膜透析：腹膜からのブドウ糖吸収（約200〜400kcal）を総エネルギーに加算検討');
     dnotes['ckd']=dn;
   }
 
-  // ---- LIVER ----
   if(dis.includes('liver')){
     var lt = document.getElementById('liver_type').value;
     var lpPerKg, dn2=[];
     switch(lt){
       case 'hepatitis':
         lpPerKg=1.2; energy=Math.round(ibw*35);
-        dn2=['エネルギー：標準体重×35kcal/kg','たんぱく質：体重×1.0〜1.2g/kg（組織修復促進）',
+        dn2=['エネルギー：標準体重×35kcal/kg',
+          'たんぱく質：体重×1.0〜1.2g/kg（組織修復促進）',
           '脂質：消化しやすい形で適量摂取','ビタミンB群・亜鉛を十分に摂取'];
         break;
       case 'cirr_comp':
         lpPerKg=1.3; energy=Math.round(ibw*35);
-        dn2=['エネルギー：標準体重×35kcal/kg（糖原病を防ぐ）','たんぱく質：体重×1.2〜1.5g/kg（サルコペニア予防）',
+        dn2=['エネルギー：標準体重×35kcal/kg（糖原病を防ぐ）',
+          'たんぱく質：体重×1.2〜1.5g/kg（サルコペニア予防）',
           '就寝前軽食（LES）：BCAA含有食品200kcal程度（低血糖・筋肉分解予防）',
           '亜鉛・マグネシウム・ビタミンB1の補充を検討'];
         break;
       case 'cirr_decomp':
         lpPerKg=1.2; energy=Math.round(ibw*35); salt=Math.min(salt,5.0);
-        dn2=['エネルギー：標準体重×35kcal/kg','たんぱく質：体重×1.0〜1.2g/kg',
+        dn2=['エネルギー：標準体重×35kcal/kg',
+          'たんぱく質：体重×1.0〜1.2g/kg',
           '食塩：5g/日未満（腹水・浮腫の管理）','水分：医師指示に従い管理',
           'BCAA製剤の使用を検討（肝不全用経腸栄養剤）'];
         break;
@@ -495,16 +677,15 @@ function doCalc(){
     dnotes['liver']=dn2;
   }
 
-  // ---- HEART FAILURE ----
   if(dis.includes('hf')){
     var nyha=document.getElementById('hf_nyha').value;
     var hffl=document.getElementById('hf_fluid').value;
     salt=Math.min(salt,nyha==='3-4'?5.0:6.0);
     if(hffl!=='none') fluid=parseInt(hffl);
     dnotes['hf']=[
-      '食塩：'+( nyha==='3-4'?'5g/日未満（重症は3〜5g/日）':'6g/日未満')+'（日本心不全学会ガイドライン）',
+      '食塩：'+(nyha==='3-4'?'5g/日未満（重症は3〜5g/日）':'6g/日未満')+'（日本心不全学会ガイドライン）',
       hffl!=='none'?'水分制限：'+hffl+'mL/日（医師指示に従う）':'水分：過剰摂取を避ける',
-      'カリウム：利尿剤使用時は低K血症に注意（野菜・果物を適切に摂取）',
+      'カリウム：利尿剤使用時は低K血症に注意',
       '少量頻回食（6回食）：一度の食事量を減らし心負担を軽減',
       'アルコール：原則禁酒（心機能悪化リスク）',
       'カフェイン・刺激物の過剰摂取を避ける'
@@ -512,12 +693,11 @@ function doCalc(){
     alerts.push({t:'i',msg:'心不全：食塩'+(nyha==='3-4'?5:6)+'g/日未満。'+(hffl!=='none'?'水分制限'+hffl+'mL/日。':'')});
   }
 
-  // ---- DYSLIPIDEMIA ----
   if(dis.includes('dyslip')){
     fatMin=Math.round(energy*0.20/9); fatMax=Math.round(energy*0.25/9);
     fiber=Math.max(fiber,20); chol=200;
     dnotes['dyslip']=[
-      '脂質：総エネルギーの20〜25%（DRI2025目標量：20〜30%より厳しく設定）',
+      '脂質：総エネルギーの20〜25%',
       '飽和脂肪酸：エネルギーの7%以下（動物性脂肪・乳脂肪・ヤシ油を制限）',
       'コレステロール：200mg/日以下（高LDL-C血症の場合）',
       'n-3系多価不飽和脂肪酸の積極摂取（青魚・亜麻仁油・えごま油）',
@@ -527,7 +707,6 @@ function doCalc(){
     ];
   }
 
-  // ---- GOUT ----
   if(dis.includes('gout')){
     purine=400;
     dnotes['gout']=[
@@ -541,22 +720,22 @@ function doCalc(){
     alerts.push({t:'i',msg:'痛風：プリン体400mg/日未満、水分2000mL/日以上。'});
   }
 
-  // ---- OSTEOPOROSIS ----
   if(dis.includes('osteo')){
-    calcium=800; vitD=20; vitK=150;
+    calcium=800; vitD=20; vitK_val=150;
     dnotes['osteo']=[
       'カルシウム：800mg/日以上（乳製品・小魚・大豆製品・緑黄色野菜）',
       'ビタミンD：20μg/日以上（日光浴15〜30分/日も有効）；DRI2025引き上げ',
       'ビタミンK：150μg/日以上（納豆・緑黄色野菜；骨タンパク質形成）',
       'たんぱく質：適切な摂取（骨マトリックス・筋肉量維持）',
       '過剰な食塩・リン・カフェイン・アルコールはCa尿中排泄増加→避ける',
-      gender==='female'&&age>=50?'大豆イソフラボン（50〜75mg/日）：閉経後女性の骨密度維持に有効':'ビタミンCも骨コラーゲン合成に必要'
+      gender==='female'&&age>=50
+        ?'大豆イソフラボン（50〜75mg/日）：閉経後女性の骨密度維持に有効'
+        :'ビタミンCも骨コラーゲン合成に必要'
     ];
   }
 
-  // ---- ANEMIA ----
   if(dis.includes('anemia')){
-    iron = gender==='male' ? 10.5 : (age<50 ? 12.0 : 10.5); // therapeutic target
+    iron = gender==='male' ? 10.5 : (age<50 ? 12.0 : 10.5);
     dnotes['anemia']=[
       'Fe（鉄）：'+iron+'mg/日以上（レバー・赤身肉・貝類などヘム鉄を優先）',
       'ビタミンC：鉄の吸収率を2〜3倍向上（食事と一緒に摂取）',
@@ -567,7 +746,7 @@ function doCalc(){
     ];
   }
 
-  // ---- recalculate macros from final energy ----
+  // recalculate macros from final energy
   if(!dis.includes('ckd')&&!dis.includes('liver')){
     var en2=energy;
     if(!dis.includes('dm')){
@@ -587,7 +766,7 @@ function doCalc(){
     gender,age,ht,wt,ibw,bmi,bee,eer,pal,sf,
     energy,protMin,protMax,protPerKg,protNote,
     fatMin,fatMax,carbMin,carbMax,
-    salt,fiber,potK,calcium,iron,phos,purine,fluid,chol,vitD,vitK,
+    salt,fiber,potK,calcium,iron,phos,purine,fluid,chol,vitD,vitK:vitK_val,
     kRestrict,alerts,dnotes,dis,dri
   });
 }
@@ -596,80 +775,88 @@ function renderResults(d){
   var sec=document.getElementById('result_sec');
   sec.classList.add('show');
 
-  // ---- BMI status ----
   var bmiLbl,bmiCol;
   if(d.bmi<18.5){bmiLbl='低体重';bmiCol='#b45309';}
   else if(d.bmi<25){bmiLbl='普通体重';bmiCol='#276749';}
   else if(d.bmi<30){bmiLbl='肥満1度';bmiCol='#c53030';}
   else{bmiLbl='肥満2度以上';bmiCol='#c53030';}
 
-  // ---- energy cards ----
   document.getElementById('energy_cards').innerHTML=
     sc(d.bmi.toFixed(1),'BMI','<span style="color:'+bmiCol+'">'+bmiLbl+'</span>',false)+
     sc(d.ibw.toFixed(1),'標準体重','kg（BMI22）',false)+
-    sc(Math.round(d.bee),'基礎代謝量 BEE','kcal/日',false)+
-    sc(Math.round(d.eer),'推定エネルギー必要量','kcal/日（BEE×PAL×SF）',false)+
-    sc(d.energy,'目標エネルギー','kcal/日',true)+
-    sc(Math.round(d.ibw*25)+'〜'+Math.round(d.ibw*35),'臨床エネルギー幅','kcal/日（25〜35×標準体重）',false);
+    sc(Math.round(d.bee),'基礎代謝 BEE','kcal/日',false)+
+    sc(d.energy,'目標エネルギー','kcal/日',true);
 
   document.getElementById('energy_note').innerHTML=
-    '※ Harris-Benedict式（'+( d.gender==='male'?'男性':'女性')+'）| BEE '+Math.round(d.bee)+
-    'kcal × PAL '+d.pal+' × ストレス係数 '+d.sf+' ＝ '+Math.round(d.eer)+'kcal';
+    'Harris-Benedict式（'+(d.gender==='male'?'男性':'女性')+'）<br>'+
+    'BEE '+Math.round(d.bee)+'kcal × PAL '+d.pal+' × ストレス係数 '+d.sf+' ＝ '+Math.round(d.eer)+'kcal<br>'+
+    '臨床エネルギー幅：'+Math.round(d.ibw*25)+'〜'+Math.round(d.ibw*35)+'kcal/日（標準体重×25〜35）';
 
-  // ---- alerts ----
   document.getElementById('alerts_area').innerHTML=d.alerts.map(function(a){
-    return '<div class="alert alert-'+( a.t==='w'?'w':'i')+'">'+(a.t==='w'?'⚠':'ℹ')+' '+a.msg+'</div>';
+    return '<div class="alert alert-'+(a.t==='w'?'w':'i')+'">'+(a.t==='w'?'⚠':'ℹ')+' '+a.msg+'</div>';
   }).join('');
 
-  // ---- nutrient table ----
   var fatPctMax=d.dis.includes('dyslip')?25:30;
   var carbPctMax=d.dis.includes('dm')?60:65;
   var protPctMin=d.age>=65?15:13;
 
   var rows=[
-    {n:'エネルギー',v:d.energy+'',u:'kcal/日',p:'—',note:'目標値',hl:true},
+    {n:'エネルギー',v:d.energy+'',u:'kcal/日',p:'—',note:'目標値',hl:true,warnVal:false},
     {n:'たんぱく質',
-     v:d.protMin==d.protMax?d.protMin+'':d.protMin+'〜'+d.protMax,
-     u:'g/日',
-     p:protPctMin+'〜20 %E',
-     note:d.protPerKg?d.protNote+'（標準体重'+d.ibw.toFixed(1)+'kg）':'目標量 '+protPctMin+'〜20%E',hl:false},
-    {n:'脂質',v:d.fatMin+'〜'+d.fatMax,u:'g/日',p:'20〜'+fatPctMax+' %E',note:'目標量',hl:false},
-    {n:'炭水化物',v:d.carbMin+'〜'+d.carbMax,u:'g/日',p:'50〜'+carbPctMax+' %E',note:'目標量',hl:false},
-    {n:'食塩相当量',v:d.salt+'未満',u:'g/日',p:'—',
-     note:d.salt<=5?'⚠ 厳格な塩分管理':d.salt<=6?'疾患対応値':'DRI2025目標量',hl:d.salt<=5},
-    {n:'食物繊維',v:d.fiber+'以上',u:'g/日',p:'—',note:'DRI2025目標量',hl:false},
+     v:d.protMin===d.protMax?d.protMin+'':d.protMin+'〜'+d.protMax,
+     u:'g/日',p:protPctMin+'〜20 %E',
+     note:d.protPerKg?d.protNote+'（標準体重'+d.ibw.toFixed(1)+'kg）':'目標量 '+protPctMin+'〜20%E',
+     hl:false,warnVal:false},
+    {n:'脂質',v:d.fatMin+'〜'+d.fatMax,u:'g/日',p:'20〜'+fatPctMax+' %E',note:'目標量',hl:false,warnVal:false},
+    {n:'炭水化物',v:d.carbMin+'〜'+d.carbMax,u:'g/日',p:'50〜'+carbPctMax+' %E',note:'目標量',hl:false,warnVal:false},
+    {n:'食塩相当量',v:d.salt+'g未満',u:'/日',p:'—',
+     note:d.salt<=5?'⚠ 厳格な塩分管理':d.salt<=6?'疾患対応値':'DRI2025目標量',
+     hl:d.salt<=5,warnVal:d.salt<=5},
+    {n:'食物繊維',v:d.fiber+'g以上',u:'/日',p:'—',note:'DRI2025目標量',hl:false,warnVal:false},
     {n:'カリウム',
-     v:d.kRestrict?d.potK+'未満':d.potK+'以上',u:'mg/日',p:'—',
-     note:d.kRestrict?'⚠ 制限（ゆでこぼし等）':d.dis.includes('ht')?'高血圧対策で増量':'DRI2025目安量',hl:d.kRestrict},
-    {n:'カルシウム',v:d.calcium+'',u:'mg/日',p:'—',note:'DRI2025推奨量'+( d.dis.includes('osteo')?'（骨粗鬆症で増量）':''),hl:false},
-    {n:'鉄',v:d.iron+'',u:'mg/日',p:'—',note:d.dis.includes('anemia')?'⚠ 貧血治療目標値':'DRI2025推奨量',hl:d.dis.includes('anemia')},
-    {n:'ビタミンD',v:d.vitD+'',u:'μg/日',p:'—',note:'DRI2025目安量'+( d.dis.includes('osteo')?'（骨粗鬆症で増量）':''),hl:false},
-    {n:'ビタミンK',v:d.vitK+'',u:'μg/日',p:'—',note:'DRI2025目安量',hl:false},
+     v:d.kRestrict?d.potK+'mg未満':d.potK+'mg以上',u:'/日',p:'—',
+     note:d.kRestrict?'⚠ CKD制限（ゆでこぼし等）':d.dis.includes('ht')?'高血圧対策で増量':'DRI2025目安量',
+     hl:d.kRestrict,warnVal:d.kRestrict},
+    {n:'カルシウム',v:d.calcium+'mg',u:'/日',p:'—',
+     note:'DRI2025推奨量'+(d.dis.includes('osteo')?'（骨粗鬆症で増量）':''),hl:false,warnVal:false},
+    {n:'鉄',v:d.iron+'mg',u:'/日',p:'—',
+     note:d.dis.includes('anemia')?'⚠ 貧血治療目標値':'DRI2025推奨量',
+     hl:d.dis.includes('anemia'),warnVal:d.dis.includes('anemia')},
+    {n:'ビタミンD',v:d.vitD+'μg',u:'/日',p:'—',
+     note:'DRI2025目安量'+(d.dis.includes('osteo')?'（骨粗鬆症で増量）':''),hl:false,warnVal:false},
+    {n:'ビタミンK',v:d.vitK+'μg',u:'/日',p:'—',note:'DRI2025目安量',hl:false,warnVal:false},
   ];
-  if(d.phos) rows.push({n:'リン',v:d.phos+'未満',u:'mg/日',p:'—',note:'⚠ CKDによる制限（加工食品・食品添加物を避ける）',hl:true});
-  if(d.purine) rows.push({n:'プリン体',v:d.purine+'未満',u:'mg/日',p:'—',note:'⚠ 痛風制限（内臓類・干物・ビールを避ける）',hl:true});
-  if(d.chol) rows.push({n:'コレステロール',v:d.chol+'未満',u:'mg/日',p:'—',note:'脂質異常症（高LDL）制限目標',hl:true});
-  if(d.fluid) rows.push({n:'水分',v:d.fluid+'',u:'mL/日',p:'—',note:'⚠ 医師指示による制限',hl:true});
+  if(d.phos) rows.push({n:'リン',v:d.phos+'mg未満',u:'/日',p:'—',note:'⚠ CKD制限（加工食品・添加物を避ける）',hl:true,warnVal:true});
+  if(d.purine) rows.push({n:'プリン体',v:d.purine+'mg未満',u:'/日',p:'—',note:'⚠ 痛風制限（内臓類・干物・ビールを避ける）',hl:true,warnVal:true});
+  if(d.chol) rows.push({n:'コレステロール',v:d.chol+'mg未満',u:'/日',p:'—',note:'脂質異常症（高LDL）制限目標',hl:true,warnVal:true});
+  if(d.fluid) rows.push({n:'水分',v:d.fluid+'mL',u:'/日',p:'—',note:'⚠ 医師指示による制限',hl:true,warnVal:true});
 
-  var tbl='<table><thead><tr><th>栄養素</th><th>目標量</th><th>単位</th><th>エネルギー比</th><th>備考</th></tr></thead><tbody>';
+  var html='';
   rows.forEach(function(r){
-    tbl+='<tr'+(r.hl?' class="hl"':'')+'><td><strong>'+r.n+'</strong></td><td>'+r.v+'</td><td>'+r.u+'</td><td>'+r.p+'</td><td class="note-cell">'+r.note+'</td></tr>';
+    html+='<div class="nutrient-row'+(r.hl?' hl':'')+'">'+
+      '<div class="n-top">'+
+        '<span class="n-name">'+r.n+'</span>'+
+        '<span class="n-val'+(r.warnVal?' warn':'')+'">'+r.v+'<span class="n-unit">'+r.u+'</span></span>'+
+      '</div>'+
+      '<div class="n-bottom">'+
+        '<span class="n-pct">'+r.p+'</span>'+
+        '<span class="n-note'+(r.hl?' warn-note':'')+'">'+r.note+'</span>'+
+      '</div>'+
+    '</div>';
   });
-  tbl+='</tbody></table>';
+  document.getElementById('nutrient_table').innerHTML=html;
 
-  // add macronutrient energy check row
   var pEn=d.protMin*4, fEn=d.fatMin*9, cEn=d.carbMin*4;
-  tbl+='<p style="font-size:.77rem;color:#718096;margin-top:8px">※ 最小値での合計エネルギー概算：たんぱく質'+pEn+'kcal＋脂質'+fEn+'kcal＋炭水化物'+cEn+'kcal＝'+(pEn+fEn+cEn)+'kcal</p>';
+  document.getElementById('macro_est').innerHTML=
+    '最小値での合計エネルギー概算：'+
+    'たんぱく質 '+pEn+'kcal ＋ 脂質 '+fEn+'kcal ＋ 炭水化物 '+cEn+'kcal ＝ '+(pEn+fEn+cEn)+'kcal';
 
-  document.getElementById('nutrient_table').innerHTML=tbl;
-
-  // ---- disease notes ----
   var disNames={dm:'糖尿病',ht:'高血圧症',ckd:'慢性腎臓病（CKD）',
     liver:'肝臓疾患',hf:'心不全',dyslip:'脂質異常症',
     gout:'痛風・高尿酸血症',osteo:'骨粗鬆症',anemia:'鉄欠乏性貧血',obesity:'肥満症'};
   var dhtml='';
   Object.keys(d.dnotes).forEach(function(k){
-    dhtml+='<div class="disease-note"><h3>【'+( disNames[k]||k)+'】</h3><ul>';
+    dhtml+='<div class="disease-note"><h3>【'+(disNames[k]||k)+'】</h3><ul>';
     d.dnotes[k].forEach(function(li){dhtml+='<li>'+li+'</li>';});
     dhtml+='</ul></div>';
   });
